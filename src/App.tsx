@@ -64,33 +64,47 @@ const tempWatchedData: WatchedMovie[] = [
 const average = (arr: number[]): number =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
+//! App (structural component)
 function App(): React.JSX.Element {
+  const [movies, setMovies] = useState<Movie[]>(tempMovieData);
+
   return (
     <>
-      <NavBar />
-      <Main />
+      <NavBar movies={movies} />
+      <Main movies={movies} />
     </>
   );
 }
 
-function NavBar(): React.JSX.Element {
+type NavBarProps = {
+  movies: Movie[];
+};
+
+//! Navbar (structural component)
+function NavBar({ movies }: NavBarProps): React.JSX.Element {
   return (
     <nav className="nav-bar">
       <Logo />
       <Search />
-      <Numresults />
+      <Numresults movies={movies} />
     </nav>
   );
 }
 
-function Numresults(): React.JSX.Element {
+type NumresultsProps = {
+  movies: Movie[];
+};
+
+//! Numresults (stateless/presentational component)
+function Numresults({ movies }: NumresultsProps): React.JSX.Element {
   return (
     <p className="num-results">
-      Found <strong>X</strong> results
+      Found <strong>{movies.length}</strong> results
     </p>
   );
 }
 
+//! Logo (stateless/presentational component)
 function Logo(): React.JSX.Element {
   return (
     <div className="logo">
@@ -100,6 +114,7 @@ function Logo(): React.JSX.Element {
   );
 }
 
+//! Search (stateful component)
 function Search(): React.JSX.Element {
   const [query, setQuery] = useState<string>('');
 
@@ -114,16 +129,26 @@ function Search(): React.JSX.Element {
   );
 }
 
-function Main(): React.JSX.Element {
+type MainProps = {
+  movies: Movie[];
+};
+
+//! Main (structural component)
+function Main({ movies }: MainProps): React.JSX.Element {
   return (
     <main className="main">
-      <ListBox />
+      <ListBox movies={movies} />
       <WatchedBox />
     </main>
   );
 }
 
-function ListBox(): React.JSX.Element {
+type ListBoxProps = {
+  movies: Movie[];
+};
+
+//! ListBox (stateful component)
+function ListBox({ movies }: ListBoxProps): React.JSX.Element {
   const [isOpen1, setIsOpen1] = useState<boolean>(true);
 
   return (
@@ -135,14 +160,17 @@ function ListBox(): React.JSX.Element {
         {isOpen1 ? '–' : '+'}
       </button>
 
-      {isOpen1 && <MovieList />}
+      {isOpen1 && <MovieList movies={movies} />}
     </div>
   );
 }
 
-function MovieList(): React.JSX.Element {
-  const [movies, setMovies] = useState<Movie[]>(tempMovieData);
+type MovieListProps = {
+  movies: Movie[];
+};
 
+//! MovieList (stateful component)
+function MovieList({ movies }: MovieListProps): React.JSX.Element {
   return (
     <ul className="list">
       {movies?.map((movie) => (
@@ -156,6 +184,7 @@ type MovieItemProps = {
   movie: Movie;
 };
 
+//! MovieItem (stateless/presentational component)
 function MovieItem({ movie }: MovieItemProps): React.JSX.Element {
   return (
     <li>
@@ -171,6 +200,7 @@ function MovieItem({ movie }: MovieItemProps): React.JSX.Element {
   );
 }
 
+//! WatchedBox (stateful component)
 function WatchedBox(): React.JSX.Element {
   const [watched, setWatched] = useState<WatchedMovie[]>(tempWatchedData);
   const [isOpen2, setIsOpen2] = useState<boolean>(true);
@@ -198,6 +228,7 @@ type WatchedSummaryProps = {
   watched: WatchedMovie[];
 };
 
+//! WatchedSummary (stateless/presentational component)
 function WatchedSummary({ watched }: WatchedSummaryProps): React.JSX.Element {
   //! derived states
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
@@ -233,6 +264,7 @@ type WatchedMoviesListProps = {
   watched: WatchedMovie[];
 };
 
+//! WatchedMoviesList (stateless/presentational component)
 function WatchedMoviesList({
   watched,
 }: WatchedMoviesListProps): React.JSX.Element {
@@ -249,6 +281,7 @@ type WatchedMovieItemProps = {
   movie: WatchedMovie;
 };
 
+//! WatchedMovieItem (stateless/presentational component)
 function WatchedMovieItem({ movie }: WatchedMovieItemProps): React.JSX.Element {
   return (
     <li>
