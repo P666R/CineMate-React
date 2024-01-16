@@ -70,23 +70,30 @@ function App(): React.JSX.Element {
 
   return (
     <>
-      <NavBar movies={movies} />
-      <Main movies={movies} />
+      <NavBar>
+        <Search />
+        <Numresults movies={movies} />
+      </NavBar>
+      <Main>
+        <ListBox>
+          <MovieList movies={movies} />
+        </ListBox>
+        <WatchedBox />
+      </Main>
     </>
   );
 }
 
 type NavBarProps = {
-  movies: Movie[];
+  children: React.ReactNode;
 };
 
 //! Navbar (structural component)
-function NavBar({ movies }: NavBarProps): React.JSX.Element {
+function NavBar({ children }: NavBarProps): React.JSX.Element {
   return (
     <nav className="nav-bar">
       <Logo />
-      <Search />
-      <Numresults movies={movies} />
+      {children}
     </nav>
   );
 }
@@ -130,25 +137,20 @@ function Search(): React.JSX.Element {
 }
 
 type MainProps = {
-  movies: Movie[];
+  children: React.ReactNode;
 };
 
 //! Main (structural component)
-function Main({ movies }: MainProps): React.JSX.Element {
-  return (
-    <main className="main">
-      <ListBox movies={movies} />
-      <WatchedBox />
-    </main>
-  );
+function Main({ children }: MainProps): React.JSX.Element {
+  return <main className="main">{children}</main>;
 }
 
 type ListBoxProps = {
-  movies: Movie[];
+  children: React.ReactNode;
 };
 
 //! ListBox (stateful component)
-function ListBox({ movies }: ListBoxProps): React.JSX.Element {
+function ListBox({ children }: ListBoxProps): React.JSX.Element {
   const [isOpen1, setIsOpen1] = useState<boolean>(true);
 
   return (
@@ -160,7 +162,7 @@ function ListBox({ movies }: ListBoxProps): React.JSX.Element {
         {isOpen1 ? '–' : '+'}
       </button>
 
-      {isOpen1 && <MovieList movies={movies} />}
+      {isOpen1 && children}
     </div>
   );
 }
