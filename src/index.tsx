@@ -7,8 +7,6 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <StarRating maxRating={15} />
-    <StarRating maxRating={10} />
-    <StarRating />
+    <StarRating maxRating={5} />
   </React.StrictMode>
 );
