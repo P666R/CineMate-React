@@ -64,9 +64,10 @@ const tempWatchedData: WatchedMovie[] = [
 const average = (arr: number[]): number =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-//! App (structural component)
+//! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
   const [movies, setMovies] = useState<Movie[]>(tempMovieData);
+  const [watched, setWatched] = useState<WatchedMovie[]>(tempWatchedData);
 
   return (
     <>
@@ -74,11 +75,16 @@ function App(): React.JSX.Element {
         <Search />
         <Numresults movies={movies} />
       </NavBar>
+
       <Main>
-        <ListBox>
+        <Box>
           <MovieList movies={movies} />
-        </ListBox>
-        <WatchedBox />
+        </Box>
+
+        <Box>
+          <WatchedSummary watched={watched} />
+          <WatchedMoviesList watched={watched} />
+        </Box>
       </Main>
     </>
   );
@@ -149,20 +155,17 @@ type ListBoxProps = {
   children: React.ReactNode;
 };
 
-//! ListBox (stateful component)
-function ListBox({ children }: ListBoxProps): React.JSX.Element {
-  const [isOpen1, setIsOpen1] = useState<boolean>(true);
+//! Box (stateful component) made resusable using component composition
+function Box({ children }: ListBoxProps): React.JSX.Element {
+  const [isOpen, setIsOpen] = useState<boolean>(true);
 
   return (
     <div className="box">
-      <button
-        className="btn-toggle"
-        onClick={() => setIsOpen1((open) => !open)}
-      >
-        {isOpen1 ? '–' : '+'}
+      <button className="btn-toggle" onClick={() => setIsOpen((open) => !open)}>
+        {isOpen ? '–' : '+'}
       </button>
 
-      {isOpen1 && children}
+      {isOpen && children}
     </div>
   );
 }
@@ -199,30 +202,6 @@ function MovieItem({ movie }: MovieItemProps): React.JSX.Element {
         </p>
       </div>
     </li>
-  );
-}
-
-//! WatchedBox (stateful component)
-function WatchedBox(): React.JSX.Element {
-  const [watched, setWatched] = useState<WatchedMovie[]>(tempWatchedData);
-  const [isOpen2, setIsOpen2] = useState<boolean>(true);
-
-  return (
-    <div className="box">
-      <button
-        className="btn-toggle"
-        onClick={() => setIsOpen2((open) => !open)}
-      >
-        {isOpen2 ? '–' : '+'}
-      </button>
-
-      {isOpen2 && (
-        <>
-          <WatchedSummary watched={watched} />
-          <WatchedMoviesList watched={watched} />
-        </>
-      )}
-    </div>
   );
 }
 
