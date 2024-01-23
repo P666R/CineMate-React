@@ -71,18 +71,29 @@ function App(): React.JSX.Element {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [watched, setWatched] = useState<WatchedMovie[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   const query = 'Interstellar';
 
   useEffect(function () {
     async function fetchMovies(): Promise<void> {
-      setIsLoading(true);
-      const res = await fetch(
-        `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-      );
-      const data = await res.json();
-      setMovies(data.Search);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+        );
+
+        if (!res.ok) throw new Error('Something went wrong with the request');
+
+        const data = await res.json();
+
+        if (data.Response === 'False') throw new Error(data.Error);
+        setMovies(data.Search);
+      } catch (error: Error | any) {
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchMovies();
   }, []);
@@ -95,7 +106,11 @@ function App(): React.JSX.Element {
       </NavBar>
 
       <Main>
-        <Box>{isLoading ? <Loader /> : <MovieList movies={movies} />}</Box>
+        <Box>
+          {isLoading && <Loader />}
+          {!isLoading && !error && <MovieList movies={movies} />}
+          {error && <ErrorMessage error={error} />}
+        </Box>
 
         <Box>
           <WatchedSummary watched={watched} />
@@ -109,6 +124,15 @@ function App(): React.JSX.Element {
 //! Loader (stateless/presentational component)
 function Loader(): React.JSX.Element {
   return <p className="loader">Loading...</p>;
+}
+
+//! ErrorMessage (stateless/presentational component)
+function ErrorMessage({ error }: { error: string }): React.JSX.Element {
+  return (
+    <p className="error">
+      <span>❌</span> {error}
+    </p>
+  );
 }
 
 type NavBarProps = {
