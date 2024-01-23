@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface Movie {
   imdbID: string;
@@ -64,28 +64,10 @@ const tempWatchedData: WatchedMovie[] = [
 const average = (arr: number[]): number =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY: string = '9c76e652';
-
 //! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [watched, setWatched] = useState<WatchedMovie[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const query = 'Interstellar';
-
-  useEffect(function () {
-    async function fetchMovies(): Promise<void> {
-      setIsLoading(true);
-      const res = await fetch(
-        `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-      );
-      const data = await res.json();
-      setMovies(data.Search);
-      setIsLoading(false);
-    }
-    fetchMovies();
-  }, []);
+  const [movies, setMovies] = useState<Movie[]>(tempMovieData);
+  const [watched, setWatched] = useState<WatchedMovie[]>(tempWatchedData);
 
   return (
     <>
@@ -95,7 +77,9 @@ function App(): React.JSX.Element {
       </NavBar>
 
       <Main>
-        <Box>{isLoading ? <Loader /> : <MovieList movies={movies} />}</Box>
+        <Box>
+          <MovieList movies={movies} />
+        </Box>
 
         <Box>
           <WatchedSummary watched={watched} />
@@ -104,11 +88,6 @@ function App(): React.JSX.Element {
       </Main>
     </>
   );
-}
-
-//! Loader (stateless/presentational component)
-function Loader(): React.JSX.Element {
-  return <p className="loader">Loading...</p>;
 }
 
 type NavBarProps = {
