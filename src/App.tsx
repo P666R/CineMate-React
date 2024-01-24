@@ -70,8 +70,8 @@ const KEY: string = '9c76e652';
 //! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
   const [query, setQuery] = useState<string>('inception');
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [watched, setWatched] = useState<WatchedMovie[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([] as Movie[]);
+  const [watched, setWatched] = useState<WatchedMovie[]>([] as WatchedMovie[]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [selectedId, setSelectedId] = useState<string>(null);
@@ -101,6 +101,14 @@ function App(): React.JSX.Element {
 
   function handleCloseMovie(): void {
     setSelectedId(null);
+  }
+
+  function handleAddWatched(movie: WatchedMovie): void {
+    setWatched((watched) => [...watched, movie]);
+  }
+
+  function handleDeleteWatched(id: string): void {
+    setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
 
   useEffect(
@@ -158,12 +166,17 @@ function App(): React.JSX.Element {
           {selectedId ? (
             <MovieDetails
               selectedId={selectedId}
+              watched={watched}
               onCloseMovie={handleCloseMovie}
+              onAddWatched={handleAddWatched}
             />
           ) : (
             <>
               <WatchedSummary watched={watched} />
-              <WatchedMoviesList watched={watched} />
+              <WatchedMoviesList
+                watched={watched}
+                onDeleteWatched={handleDeleteWatched}
+              />
             </>
           )}
         </Box>
@@ -318,13 +331,17 @@ function MovieItem({
 
 type MovieDetailsProps = {
   selectedId: string;
+  watched: WatchedMovie[];
   onCloseMovie: () => void;
+  onAddWatched: (movie: WatchedMovie) => void;
 };
 
 //! MovieDetails (stateless/presentational component)
 function MovieDetails({
   selectedId,
+  watched,
   onCloseMovie,
+  onAddWatched,
 }: MovieDetailsProps): React.JSX.Element {
   type Movie = {
     Title: string;
@@ -342,6 +359,15 @@ function MovieDetails({
   const [movie, setMovie] = useState<Movie>({} as Movie);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [userRating, setUserRating] = useState<number>(0);
+
+  const isWatched = watched.some(
+    (watchedMovie) => watchedMovie.imdbID === selectedId
+  );
+
+  const watchedUserRating = watched.find(
+    (movie) => movie.imdbID === selectedId
+  )?.userRating;
 
   const {
     Title: title,
@@ -356,7 +382,20 @@ function MovieDetails({
     Genre: genre,
   } = movie;
 
-  console.log(title, year);
+  function handleAdd() {
+    const newWatchedMovie = {
+      imdbID: selectedId,
+      Title: title,
+      Year: year,
+      Poster: poster,
+      runtime: Number(runtime.split(' ').at(0)),
+      imdbRating: Number(imdbRating),
+      userRating,
+    };
+
+    onAddWatched(newWatchedMovie);
+    onCloseMovie();
+  }
 
   useEffect(
     function () {
@@ -412,7 +451,25 @@ function MovieDetails({
 
           <section>
             <div className="rating">
-              <StarRating maxRating={10} size={24} />
+              {!isWatched ? (
+                <>
+                  <StarRating
+                    maxRating={10}
+                    size={24}
+                    onSetRating={setUserRating}
+                  />
+
+                  {userRating > 0 && (
+                    <button className="btn-add" onClick={handleAdd}>
+                      + Add to list
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p>
+                  You rated this movie {watchedUserRating} <span>⭐</span>
+                </p>
+              )}
             </div>
             <p>
               <em>{plot}</em>
@@ -433,6 +490,7 @@ type WatchedSummaryProps = {
 
 //! WatchedSummary (stateless/presentational component)
 function WatchedSummary({ watched }: WatchedSummaryProps): React.JSX.Element {
+  // console.log(watched[0].userRating);
   //! derived states
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
@@ -448,11 +506,11 @@ function WatchedSummary({ watched }: WatchedSummaryProps): React.JSX.Element {
         </p>
         <p>
           <span>⭐️</span>
-          <span>{avgImdbRating}</span>
+          <span>{avgImdbRating.toFixed(2)}</span>
         </p>
         <p>
           <span>🌟</span>
-          <span>{avgUserRating}</span>
+          <span>{avgUserRating.toFixed(2)}</span>
         </p>
         <p>
           <span>⏳</span>
@@ -465,16 +523,22 @@ function WatchedSummary({ watched }: WatchedSummaryProps): React.JSX.Element {
 
 type WatchedMoviesListProps = {
   watched: WatchedMovie[];
+  onDeleteWatched: (id: string) => void;
 };
 
 //! WatchedMoviesList (stateless/presentational component)
 function WatchedMoviesList({
   watched,
+  onDeleteWatched,
 }: WatchedMoviesListProps): React.JSX.Element {
   return (
     <ul className="list">
       {watched.map((movie) => (
-        <WatchedMovieItem key={movie.imdbID} movie={movie} />
+        <WatchedMovieItem
+          key={movie.imdbID}
+          movie={movie}
+          onDeleteWatched={onDeleteWatched}
+        />
       ))}
     </ul>
   );
@@ -482,10 +546,14 @@ function WatchedMoviesList({
 
 type WatchedMovieItemProps = {
   movie: WatchedMovie;
+  onDeleteWatched: (id: string) => void;
 };
 
 //! WatchedMovieItem (stateless/presentational component)
-function WatchedMovieItem({ movie }: WatchedMovieItemProps): React.JSX.Element {
+function WatchedMovieItem({
+  movie,
+  onDeleteWatched,
+}: WatchedMovieItemProps): React.JSX.Element {
   return (
     <li>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
@@ -503,6 +571,12 @@ function WatchedMovieItem({ movie }: WatchedMovieItemProps): React.JSX.Element {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+        <button
+          className="btn-delete"
+          onClick={() => onDeleteWatched(movie.imdbID)}
+        >
+          X
+        </button>
       </div>
     </li>
   );
