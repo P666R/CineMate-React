@@ -68,13 +68,12 @@ const KEY: string = '9c76e652';
 
 //! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
-  const [query, setQuery] = useState<string>('run');
+  const [query, setQuery] = useState<string>('inception');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [watched, setWatched] = useState<WatchedMovie[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-
-  const tempQuery = 'Interstellar';
+  const [selectedId, setSelectedId] = useState<string>(null);
 
   /*
   useEffect(function () {
@@ -94,6 +93,14 @@ function App(): React.JSX.Element {
 
   console.log('during render');
  */
+
+  function handleSelectMovie(id: string): void {
+    setSelectedId((selectedId) => (selectedId === id ? null : id));
+  }
+
+  function handleCloseMovie(): void {
+    setSelectedId(null);
+  }
 
   useEffect(
     function () {
@@ -140,13 +147,24 @@ function App(): React.JSX.Element {
       <Main>
         <Box>
           {isLoading && <Loader />}
-          {!isLoading && !error && <MovieList movies={movies} />}
+          {!isLoading && !error && (
+            <MovieList movies={movies} onSelectMovie={handleSelectMovie} />
+          )}
           {error && <ErrorMessage error={error} />}
         </Box>
 
         <Box>
-          <WatchedSummary watched={watched} />
-          <WatchedMoviesList watched={watched} />
+          {selectedId ? (
+            <MovieDetails
+              selectedId={selectedId}
+              onCloseMovie={handleCloseMovie}
+            />
+          ) : (
+            <>
+              <WatchedSummary watched={watched} />
+              <WatchedMoviesList watched={watched} />
+            </>
+          )}
         </Box>
       </Main>
     </>
@@ -252,14 +270,22 @@ function Box({ children }: ListBoxProps): React.JSX.Element {
 
 type MovieListProps = {
   movies: Movie[];
+  onSelectMovie: (id: string) => void;
 };
 
 //! MovieList (stateful component)
-function MovieList({ movies }: MovieListProps): React.JSX.Element {
+function MovieList({
+  movies,
+  onSelectMovie,
+}: MovieListProps): React.JSX.Element {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((movie) => (
-        <MovieItem key={movie.imdbID} movie={movie} />
+        <MovieItem
+          key={movie.imdbID}
+          movie={movie}
+          onSelectMovie={onSelectMovie}
+        />
       ))}
     </ul>
   );
@@ -267,12 +293,16 @@ function MovieList({ movies }: MovieListProps): React.JSX.Element {
 
 type MovieItemProps = {
   movie: Movie;
+  onSelectMovie: (id: string) => void;
 };
 
 //! MovieItem (stateless/presentational component)
-function MovieItem({ movie }: MovieItemProps): React.JSX.Element {
+function MovieItem({
+  movie,
+  onSelectMovie,
+}: MovieItemProps): React.JSX.Element {
   return (
-    <li>
+    <li onClick={() => onSelectMovie(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
@@ -282,6 +312,26 @@ function MovieItem({ movie }: MovieItemProps): React.JSX.Element {
         </p>
       </div>
     </li>
+  );
+}
+
+type MovieDetailsProps = {
+  selectedId: string;
+  onCloseMovie: () => void;
+};
+
+//! MovieDetails (stateless/presentational component)
+function MovieDetails({
+  selectedId,
+  onCloseMovie,
+}: MovieDetailsProps): React.JSX.Element {
+  return (
+    <div className="details">
+      <button className="btn-back" onClick={onCloseMovie}>
+        &larr;
+      </button>
+      {selectedId}
+    </div>
   );
 }
 
