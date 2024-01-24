@@ -68,40 +68,72 @@ const KEY: string = '9c76e652';
 
 //! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
+  const [query, setQuery] = useState<string>('run');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [watched, setWatched] = useState<WatchedMovie[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
-  const query = 'Interstellar';
+  const tempQuery = 'Interstellar';
+
+  /*
+  useEffect(function () {
+    console.log('after initial render');
+  }, []);
 
   useEffect(function () {
-    async function fetchMovies(): Promise<void> {
-      try {
-        setIsLoading(true);
-        const res = await fetch(
-          `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-        );
+    console.log('after every render');
+  });
 
-        if (!res.ok) throw new Error('Something went wrong with the request');
+  useEffect(
+    function () {
+      console.log('D');
+    },
+    [query]
+  );
 
-        const data = await res.json();
+  console.log('during render');
+ */
 
-        if (data.Response === 'False') throw new Error(data.Error);
-        setMovies(data.Search);
-      } catch (error: Error | any) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
+  useEffect(
+    function () {
+      async function fetchMovies(): Promise<void> {
+        try {
+          setIsLoading(true);
+          setError('');
+
+          const res = await fetch(
+            `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+          );
+
+          if (!res.ok) throw new Error('Something went wrong with the request');
+
+          const data = await res.json();
+
+          if (data.Response === 'False') throw new Error('Movie not found');
+
+          setMovies(data.Search);
+        } catch (error: Error | any) {
+          setError(error.message);
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
-    fetchMovies();
-  }, []);
+      if (query.length < 3) {
+        setMovies([]);
+        setError('');
+        return;
+      }
+
+      fetchMovies();
+    },
+    [query]
+  );
 
   return (
     <>
       <NavBar>
-        <Search />
+        <Search query={query} setQuery={setQuery} />
         <Numresults movies={movies} />
       </NavBar>
 
@@ -172,10 +204,13 @@ function Logo(): React.JSX.Element {
   );
 }
 
-//! Search (stateful component)
-function Search(): React.JSX.Element {
-  const [query, setQuery] = useState<string>('');
+type SearchProps = {
+  query: string;
+  setQuery: React.Dispatch<React.SetStateAction<string>>;
+};
 
+//! Search (stateful component)
+function Search({ query, setQuery }: SearchProps): React.JSX.Element {
   return (
     <input
       className="search"
