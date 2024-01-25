@@ -47,35 +47,40 @@ function App(): React.JSX.Element {
 
   useEffect(
     function () {
-      async function fetchMovies(): Promise<void> {
-        try {
-          setIsLoading(true);
-          setError('');
+      const controller = new AbortController();
+      const debouncedQuery = query;
 
-          const res = await fetch(
-            `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-          );
-
-          if (!res.ok) throw new Error('Something went wrong with the request');
-
-          const data = await res.json();
-
-          if (data.Response === 'False') throw new Error('Movie not found');
-
-          setMovies(data.Search);
-        } catch (error: Error | any) {
-          setError(error.message);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-      if (query.length < 3) {
+      if (debouncedQuery.length < 3) {
         setMovies([]);
         setError('');
         return;
       }
 
-      fetchMovies();
+      const timeoutId = setTimeout(async function fetchMovies(): Promise<void> {
+        try {
+          setIsLoading(true);
+          setError('');
+          const res = await fetch(
+            `https://www.omdbapi.com/?apikey=${KEY}&s=${debouncedQuery}`,
+            { signal: controller.signal }
+          );
+          if (!res.ok) throw new Error('Something went wrong with the request');
+          const data = await res.json();
+          if (data.Response === 'False') throw new Error('Movie not found');
+          setMovies(data.Search);
+        } catch (error: Error | any) {
+          if (error.name !== 'AbortError') {
+            setError(error.message);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      }, 500);
+
+      return function () {
+        clearTimeout(timeoutId);
+        controller.abort();
+      };
     },
     [query]
   );
