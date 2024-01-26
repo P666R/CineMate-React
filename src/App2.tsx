@@ -24,10 +24,7 @@ const KEY: string = '9c76e652';
 function App(): React.JSX.Element {
   const [query, setQuery] = useState<string>('');
   const [movies, setMovies] = useState<Movie[]>([] as Movie[]);
-  const [watched, setWatched] = useState<WatchedMovie[]>(function () {
-    return JSON.parse(localStorage.getItem('watched')) || [];
-  });
-
+  const [watched, setWatched] = useState<WatchedMovie[]>([] as WatchedMovie[]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [selectedId, setSelectedId] = useState<string>(null);
@@ -42,20 +39,11 @@ function App(): React.JSX.Element {
 
   function handleAddWatched(movie: WatchedMovie): void {
     setWatched((watched) => [...watched, movie]);
-
-    // localStorage.setItem('watched', JSON.stringify([...watched, movie]));
   }
 
   function handleDeleteWatched(id: string): void {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
-
-  useEffect(
-    function () {
-      localStorage.setItem('watched', JSON.stringify(watched));
-    },
-    [watched]
-  );
 
   useEffect(
     function () {
