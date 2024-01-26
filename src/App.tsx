@@ -22,7 +22,7 @@ const KEY: string = '9c76e652';
 
 //! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
-  const [query, setQuery] = useState<string>('gun');
+  const [query, setQuery] = useState<string>('');
   const [movies, setMovies] = useState<Movie[]>([] as Movie[]);
   const [watched, setWatched] = useState<WatchedMovie[]>([] as WatchedMovie[]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -68,6 +68,8 @@ function App(): React.JSX.Element {
           const data = await res.json();
           if (data.Response === 'False') throw new Error('Movie not found');
           setMovies(data.Search);
+
+          handleCloseMovie();
         } catch (error: Error | any) {
           if (error.name !== 'AbortError') {
             setError(error.message);
