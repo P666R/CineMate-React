@@ -331,10 +331,25 @@ function MovieDetails({
       imdbRating: Number(imdbRating),
       userRating,
     };
-
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+
+  useEffect(
+    function () {
+      function callback(e: KeyboardEvent): void {
+        if (e.key === 'Escape') {
+          onCloseMovie();
+          console.log('first');
+        }
+      }
+      document.addEventListener('keydown', callback);
+      return function () {
+        document.removeEventListener('keydown', callback);
+      };
+    },
+    [onCloseMovie]
+  );
 
   useEffect(
     function () {
