@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import StarRating from './StarRating';
 
 interface Movie {
@@ -196,6 +196,27 @@ type SearchProps = {
 
 //! Search (stateful component)
 function Search({ query, setQuery }: SearchProps): React.JSX.Element {
+  const inputEl = useRef(null);
+
+  useEffect(
+    function () {
+      function callback(e: KeyboardEvent) {
+        //* check if input already focused
+        if (document.activeElement === inputEl.current) return;
+        //* focus the input element on enter keydown
+        if (e.key === 'Enter') {
+          inputEl.current.focus();
+          setQuery('');
+        }
+      }
+
+      document.addEventListener('keydown', callback);
+
+      return () => document.removeEventListener('keydown', callback);
+    },
+    [setQuery]
+  );
+
   return (
     <input
       className="search"
@@ -203,6 +224,7 @@ function Search({ query, setQuery }: SearchProps): React.JSX.Element {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 }
