@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import StarRating from './StarRating';
 import { useMovies } from './useMovies';
 import { useLocalStorageState } from './useLocalStorageState';
+import { useKey } from './useKey';
 
 interface Movie {
   imdbID: string;
@@ -155,24 +156,13 @@ type SearchProps = {
 function Search({ query, setQuery }: SearchProps): React.JSX.Element {
   const inputEl = useRef(null);
 
-  useEffect(
-    function () {
-      function callback(e: KeyboardEvent) {
-        //* check if input already focused
-        if (document.activeElement === inputEl.current) return;
-        //* focus the input element on enter keydown
-        if (e.key === 'Enter') {
-          inputEl.current.focus();
-          setQuery('');
-        }
-      }
-
-      document.addEventListener('keydown', callback);
-
-      return () => document.removeEventListener('keydown', callback);
-    },
-    [setQuery]
-  );
+  //* useKey custom hook
+  useKey('Enter', function () {
+    //? check if input already focused
+    if (document.activeElement === inputEl.current) return;
+    inputEl.current.focus();
+    setQuery('');
+  });
 
   return (
     <input
@@ -338,21 +328,8 @@ function MovieDetails({
     onCloseMovie();
   }
 
-  useEffect(
-    function () {
-      function callback(e: KeyboardEvent): void {
-        if (e.key === 'Escape') {
-          onCloseMovie();
-          console.log('first');
-        }
-      }
-      document.addEventListener('keydown', callback);
-      return function () {
-        document.removeEventListener('keydown', callback);
-      };
-    },
-    [onCloseMovie]
-  );
+  //* useKey custom hook
+  useKey('Escape', onCloseMovie);
 
   useEffect(
     function () {
