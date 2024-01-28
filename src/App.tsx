@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import StarRating from './StarRating';
+import { useMovies } from './useMovies';
 
-interface Movie {
+export interface Movie {
   imdbID: string;
   Title: string;
   Year: string;
@@ -23,27 +24,25 @@ const KEY: string = '9c76e652';
 //! App (structural component) eliminated prop drilling using component composition
 function App(): React.JSX.Element {
   const [query, setQuery] = useState<string>('');
-  const [movies, setMovies] = useState<Movie[]>([] as Movie[]);
+  const [selectedId, setSelectedId] = useState<string>(null);
   const [watched, setWatched] = useState<WatchedMovie[]>(function () {
     return JSON.parse(localStorage.getItem('watched')) || [];
   });
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [selectedId, setSelectedId] = useState<string>(null);
+  //* using usecallback hook to memoize the function
+  const handleCloseMovie = useCallback(function () {
+    setSelectedId(null);
+  }, []);
+
+  //* useMovies custom hook
+  const { movies, isLoading, error } = useMovies(query, handleCloseMovie);
 
   function handleSelectMovie(id: string): void {
     setSelectedId((selectedId) => (selectedId === id ? null : id));
   }
 
-  function handleCloseMovie(): void {
-    setSelectedId(null);
-  }
-
   function handleAddWatched(movie: WatchedMovie): void {
     setWatched((watched) => [...watched, movie]);
-
-    // localStorage.setItem('watched', JSON.stringify([...watched, movie]));
   }
 
   function handleDeleteWatched(id: string): void {
@@ -55,48 +54,6 @@ function App(): React.JSX.Element {
       localStorage.setItem('watched', JSON.stringify(watched));
     },
     [watched]
-  );
-
-  useEffect(
-    function () {
-      const controller = new AbortController();
-      const debouncedQuery = query;
-
-      if (debouncedQuery.length < 3) {
-        setMovies([]);
-        setError('');
-        return;
-      }
-
-      const timeoutId = setTimeout(async function fetchMovies(): Promise<void> {
-        try {
-          setIsLoading(true);
-          setError('');
-          const res = await fetch(
-            `https://www.omdbapi.com/?apikey=${KEY}&s=${debouncedQuery}`,
-            { signal: controller.signal }
-          );
-          if (!res.ok) throw new Error('Something went wrong with the request');
-          const data = await res.json();
-          if (data.Response === 'False') throw new Error('Movie not found');
-          setMovies(data.Search);
-
-          handleCloseMovie();
-        } catch (error: Error | any) {
-          if (error.name !== 'AbortError') {
-            setError(error.message);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      }, 500);
-
-      return function () {
-        clearTimeout(timeoutId);
-        controller.abort();
-      };
-    },
-    [query]
   );
 
   return (
@@ -338,9 +295,12 @@ function MovieDetails({
 
   const countRef = useRef(0);
 
-  useEffect(() => {
-    if (userRating) countRef.current += 1;
-  }, [userRating]);
+  useEffect(
+    function () {
+      if (userRating) countRef.current += 1;
+    },
+    [userRating]
+  );
 
   const isWatched = watched.some(
     (watchedMovie) => watchedMovie.imdbID === selectedId
