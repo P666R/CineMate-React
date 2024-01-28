@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Movie } from './App';
 
 const KEY: string = '9c76e652';
 
-export function useMovies(query: string, callback: () => void) {
-  const [movies, setMovies] = useState<Movie[]>([] as Movie[]);
+export function useMovies<T>(
+  query: string,
+  callback: () => void
+): {
+  movies: T[];
+  isLoading: boolean;
+  error: string;
+} {
+  const [movies, setMovies] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 

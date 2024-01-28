@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import StarRating from './StarRating';
 import { useMovies } from './useMovies';
+import { useLocalStorageState } from './useLocalStorageState';
 
-export interface Movie {
+interface Movie {
   imdbID: string;
   Title: string;
   Year: string;
@@ -25,9 +26,6 @@ const KEY: string = '9c76e652';
 function App(): React.JSX.Element {
   const [query, setQuery] = useState<string>('');
   const [selectedId, setSelectedId] = useState<string>(null);
-  const [watched, setWatched] = useState<WatchedMovie[]>(function () {
-    return JSON.parse(localStorage.getItem('watched')) || [];
-  });
 
   //* using usecallback hook to memoize the function
   const handleCloseMovie = useCallback(function () {
@@ -35,7 +33,16 @@ function App(): React.JSX.Element {
   }, []);
 
   //* useMovies custom hook
-  const { movies, isLoading, error } = useMovies(query, handleCloseMovie);
+  const { movies, isLoading, error } = useMovies<Movie>(
+    query,
+    handleCloseMovie
+  );
+
+  //* useLocalStorageState custom hook
+  const [watched, setWatched] = useLocalStorageState<WatchedMovie[]>(
+    [],
+    'watched'
+  );
 
   function handleSelectMovie(id: string): void {
     setSelectedId((selectedId) => (selectedId === id ? null : id));
@@ -48,13 +55,6 @@ function App(): React.JSX.Element {
   function handleDeleteWatched(id: string): void {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
-
-  useEffect(
-    function () {
-      localStorage.setItem('watched', JSON.stringify(watched));
-    },
-    [watched]
-  );
 
   return (
     <>
